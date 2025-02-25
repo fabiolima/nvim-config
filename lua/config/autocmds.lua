@@ -6,3 +6,24 @@
 --
 -- Or remove existing autocmds by their group name (which is prefixed with `lazyvim_` for the defaults)
 -- e.g. vim.api.nvim_del_augroup_by_name("lazyvim_wrap_spell")
+
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("LspAttachConflicts", { clear = true }),
+  desc = "Prevent tsserver and volar conflict",
+  callback = function(args)
+    if not (args.data and args.data.client_id) then
+      return
+    end
+
+    local active_clients = vim.lsp.get_clients()
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+
+    if client ~= nil and client.name == "volar" then
+      for _, c in ipairs(active_clients) do
+        if c.name == "ts_ls" then
+          c.stop()
+        end
+      end
+    end
+  end,
+})
