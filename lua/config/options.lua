@@ -3,3 +3,5 @@
 -- Add any additional options here
 
 vim.opt.swapfile = false
+-- vim.g.lazyvim_ruby_lsp = "solargraph"
+-- vim.g.lazyvim_ruby_formatter = "rubocop"
