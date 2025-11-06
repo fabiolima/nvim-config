@@ -22,8 +22,6 @@ local function open_floating_window()
     title_pos = "center",
   })
 
-  -- ⛔️ antes mapeava "n" e "t" — agora só "n"
-  -- pra evitar capturar o 'q' e '<Esc>' que o byebug precisa no terminal
   vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = buf, silent = true })
   vim.keymap.set("n", "<Esc>", "<cmd>close<CR>", { buffer = buf, silent = true })
 
@@ -61,13 +59,18 @@ local function open_or_reuse_split()
   return buf, vim.api.nvim_get_current_win()
 end
 
--- === Execução interativa (com checagem de buffer) ===
 local function run_rspec_tty(cmd, buf)
+  -- para evitar terminais antigos ativos
   if vim.b[buf].term_job_id then
     pcall(vim.fn.jobstop, vim.b[buf].term_job_id)
   end
 
-  vim.fn.termopen(cmd, {
+  -- muda o buffer atual para o alvo do terminal
+  vim.api.nvim_set_current_buf(buf)
+
+  -- inicia o job em modo terminal
+  local job_id = vim.fn.jobstart(cmd, {
+    term = true, -- substitui termopen()
     on_exit = function(_, code)
       vim.schedule(function()
         if not vim.api.nvim_buf_is_valid(buf) then
@@ -79,6 +82,10 @@ local function run_rspec_tty(cmd, buf)
     end,
   })
 
+  -- guarda o id pra futuras paradas
+  vim.b[buf].term_job_id = job_id
+
+  -- entra em modo insert pra permitir interação
   vim.cmd("startinsert")
 end
 
@@ -129,10 +136,5 @@ vim.api.nvim_create_user_command("RSpecFile", run_file_split, {})
 vim.api.nvim_create_user_command("RSpecLine", run_line_split, {})
 vim.api.nvim_create_user_command("RSpecFloatFile", run_file_float, {})
 vim.api.nvim_create_user_command("RSpecFloatLine", run_line_float, {})
-
-vim.keymap.set("n", "<leader>rf", ":RSpecFile<CR>", { desc = "Run RSpec (file) in split" })
-vim.keymap.set("n", "<leader>rl", ":RSpecLine<CR>", { desc = "Run RSpec (line) in split" })
-vim.keymap.set("n", "<leader>rF", ":RSpecFloatFile<CR>", { desc = "Run RSpec (file) in floating window" })
-vim.keymap.set("n", "<leader>rL", ":RSpecFloatLine<CR>", { desc = "Run RSpec (line) in floating window" })
 
 vim.api.nvim_echo({ { "RSpec TTY runner (podman-compose) loaded ✅", "Comment" } }, false, {})
