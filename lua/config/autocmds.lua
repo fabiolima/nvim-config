@@ -27,3 +27,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end
   end,
 })
+
+-- Carrega automaticamente os helpers locais de utils/
+local utils_path = vim.fn.stdpath("config") .. "/lua/utils"
+
+for _, file in ipairs(vim.fn.glob(utils_path .. "/*.lua", false, true)) do
+  local mod = file:match("lua/(.*)%.lua$"):gsub("/", ".")
+  pcall(require, mod)
+end
