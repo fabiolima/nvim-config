@@ -17,8 +17,8 @@ local function open_floating_window()
     row = row,
     col = col,
     style = "minimal",
-    border = "rounded",
-    title = " 🧪 RSpec (interactive) ",
+    border = "double",
+    title = "RSpec Runner 🧪",
     title_pos = "center",
   })
 
