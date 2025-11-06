@@ -22,6 +22,17 @@ local function open_floating_window()
     title_pos = "center",
   })
 
+  -- fecha automaticamente se perder o foco
+  vim.api.nvim_create_autocmd("WinLeave", {
+    buffer = buf,
+    callback = function()
+      if vim.api.nvim_win_is_valid(win) then
+        vim.api.nvim_win_close(win, true)
+      end
+    end,
+  })
+
+  -- keymaps básicos
   vim.keymap.set("n", "q", "<cmd>close<CR>", { buffer = buf, silent = true })
   vim.keymap.set("n", "<Esc>", "<cmd>close<CR>", { buffer = buf, silent = true })
 
