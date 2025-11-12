@@ -70,18 +70,16 @@ local function open_or_reuse_split()
   return buf, vim.api.nvim_get_current_win()
 end
 
+-- === Terminal job ===
 local function run_rspec_tty(cmd, buf)
-  -- para evitar terminais antigos ativos
   if vim.b[buf].term_job_id then
     pcall(vim.fn.jobstop, vim.b[buf].term_job_id)
   end
 
-  -- muda o buffer atual para o alvo do terminal
   vim.api.nvim_set_current_buf(buf)
 
-  -- inicia o job em modo terminal
   local job_id = vim.fn.jobstart(cmd, {
-    term = true, -- substitui termopen()
+    term = true,
     on_exit = function(_, code)
       vim.schedule(function()
         if not vim.api.nvim_buf_is_valid(buf) then
@@ -93,10 +91,7 @@ local function run_rspec_tty(cmd, buf)
     end,
   })
 
-  -- guarda o id pra futuras paradas
   vim.b[buf].term_job_id = job_id
-
-  -- entra em modo insert pra permitir interação
   vim.cmd("startinsert")
 end
 
@@ -114,6 +109,16 @@ local function build_cmd(target)
   }
 end
 
+-- retorna o caminho relativo à raiz do git
+local function project_relative_path()
+  local git_root = vim.fn.systemlist("git rev-parse --show-toplevel")[1]
+  if git_root == nil or git_root == "" then
+    return vim.fn.expand("%:.") -- fallback se não for um repositório git
+  end
+  local abs_path = vim.fn.expand("%:p")
+  return vim.fn.fnamemodify(abs_path, ":." .. git_root)
+end
+
 -- === Execuções ===
 local function run_split(target)
   local buf = open_or_reuse_split()
@@ -127,19 +132,19 @@ end
 
 -- === Entry points ===
 local function run_file_split()
-  run_split(vim.fn.expand("%"))
+  run_split(project_relative_path())
 end
 
 local function run_line_split()
-  run_split(string.format("%s:%d", vim.fn.expand("%"), vim.fn.line(".")))
+  run_split(string.format("%s:%d", project_relative_path(), vim.fn.line(".")))
 end
 
 local function run_file_float()
-  run_floating(vim.fn.expand("%"))
+  run_floating(project_relative_path())
 end
 
 local function run_line_float()
-  run_floating(string.format("%s:%d", vim.fn.expand("%"), vim.fn.line(".")))
+  run_floating(string.format("%s:%d", project_relative_path(), vim.fn.line(".")))
 end
 
 -- === Commands & Keymaps ===
